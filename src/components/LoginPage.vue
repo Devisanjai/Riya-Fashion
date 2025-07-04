@@ -3,7 +3,7 @@
     <canvas ref="bgCanvas" class="bg-canvas"></canvas>
 
     <div class="login-card">
-      <h2>RIYA FASHION</h2>
+      <h2>DemiFashion</h2>
       <p class="tagline">Place where Fashion Meets Elegance</p>
       <form @submit.prevent="login">
         <div class="input-group">
@@ -36,7 +36,7 @@ export default {
     initThree() {
       const canvas = this.$refs.bgCanvas;
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x000000); // black background
+      scene.background = new THREE.Color(0x000000);
 
       const camera = new THREE.PerspectiveCamera(
         75,
@@ -65,7 +65,7 @@ export default {
 
       const material = new THREE.PointsMaterial({
         size: 2,
-        color: '#ffffff', // white particles
+        color: '#ffffff',
         transparent: true,
         opacity: 0.9
       });
@@ -103,10 +103,12 @@ export default {
   overflow: hidden;
   position: relative;
   font-family: 'Poppins', sans-serif;
-  background: #000; /* solid black background */
+  background: #000;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 1rem;
+  box-sizing: border-box;
 }
 
 .bg-canvas {
@@ -121,7 +123,7 @@ export default {
 .login-card {
   position: relative;
   z-index: 1;
-  background: rgba(255, 255, 255, 0.05); /* light frosted glass */
+  background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.15);
   padding: 3rem 2rem;
@@ -188,5 +190,31 @@ export default {
 
 .login-btn:hover {
   background-color: #e0e0e0;
+}
+
+/* Responsive Styles */
+@media (max-width: 600px) {
+  .login-card {
+    padding: 2rem 1rem;
+    max-width: 90%;
+  }
+
+  .login-card h2 {
+    font-size: 1.6rem;
+  }
+
+  .tagline {
+    font-size: 0.85rem;
+  }
+
+  .input-group input {
+    font-size: 0.95rem;
+    padding: 0.5rem;
+  }
+
+  .login-btn {
+    font-size: 0.95rem;
+    padding: 0.7rem;
+  }
 }
 </style>

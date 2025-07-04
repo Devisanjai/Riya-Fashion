@@ -27,7 +27,7 @@ export default {
     initThree() {
       const canvas = this.$refs.bgCanvas;
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x000000); // solid black
+      scene.background = new THREE.Color(0x000000);
 
       const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
       camera.position.z = 300;
@@ -51,7 +51,7 @@ export default {
 
       const material = new THREE.PointsMaterial({
         size: 3,
-        color: '#ffffff', // white particles
+        color: '#ffffff',
         transparent: true,
         opacity: 0.85
       });
@@ -88,13 +88,11 @@ export default {
   min-height: 100vh;
   position: relative;
   font-family: 'Poppins', sans-serif;
-  background: #000; /* black background */
+  background: #000;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0;
   overflow-x: hidden;
-  overflow-y: auto;
 }
 
 .bg-canvas {
@@ -117,15 +115,16 @@ export default {
   position: relative;
   z-index: 1;
   padding: 2rem 1rem;
-  border-radius: 16px;
-  width: 90%;
-  max-width: 1200px;
+  width: 95%;
+  max-width: 1300px;
   margin-top: 6rem;
   margin-bottom: 3rem;
-  text-align: center;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 2rem;
 }
 
-/* Make product cards transparent (should be used inside ProductCard.vue too) */
+/* Optional card base if needed here, else should be in ProductCard.vue */
 .card {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(12px);
@@ -134,8 +133,12 @@ export default {
   box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
   padding: 1.5rem;
   border-radius: 16px;
-  width: 280px;
   text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
 }
 
 .card img {
@@ -177,10 +180,23 @@ h2 {
   color: #000;
 }
 
-/* Responsive layout */
+/* Responsive improvements */
+@media (max-width: 1024px) {
+  .products-card {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    padding: 2rem;
+  }
+
+  h2 {
+    font-size: 1.7rem;
+  }
+}
+
 @media (max-width: 768px) {
   .products-card {
-    padding: 2rem 1rem;
+    grid-template-columns: 1fr;
+    padding: 1.5rem;
   }
 
   h2 {
@@ -190,11 +206,17 @@ h2 {
 
 @media (max-width: 480px) {
   .products-card {
-    padding: 1.5rem 1rem;
+    padding: 1rem;
   }
 
   h2 {
     font-size: 1.3rem;
+  }
+
+  .add-btn,
+  .view-btn {
+    width: 100%;
+    font-size: 0.9rem;
   }
 }
 </style>

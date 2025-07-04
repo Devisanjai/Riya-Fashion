@@ -1,21 +1,48 @@
 <template>
-  <div class="cart-wrapper">
+  <div class="payment-wrapper">
     <canvas ref="bgCanvas" class="bg-canvas"></canvas>
     <NavBar />
-    <div class="cart-content">
-      <h2>Your Cart</h2>
-      <div v-if="cart.length">
-        <div v-for="item in cart" :key="item.id" class="cart-item">
-          <img :src="item.images[item.colors[0]]" alt="Product Image" />
-          <p>{{ item.name }} - ₹{{ item.price }}</p>
-          <button class="remove-button" @click="removeFromCart(item.id)">Remove</button>
-        </div>
-        <p class="total-amount">Total: ₹{{ totalAmount }}</p>
-        <button class="cart-button" @click="goToPayment">Proceed to Payment</button>
+
+    <div class="payment-card">
+      <h2>Choose Payment Method</h2>
+      <div class="form-group">
+        <input type="text" v-model="username" placeholder="Full Name" />
+        <input type="text" v-model="age" placeholder="Age" min="1"  />
+        <input type="text" v-model="phone" placeholder="Phone Number (10 digits)" maxlength="10" />
+        <input type="email" v-model="email" placeholder="Email Address" />
+        <textarea v-model="address" placeholder="Delivery Address" rows="3"></textarea>
       </div>
-      <div v-else>
-        <p>Your cart is empty.</p>
+
+      <ul class="payment-options">
+        <li>
+          <input type="radio" id="card" value="Card" v-model="method" />
+          <label for="card">Credit/Debit Card</label>
+        </li>
+        <li>
+          <input type="radio" id="upi" value="UPI" v-model="method" />
+          <label for="upi">UPI</label>
+        </li>
+        <li>
+          <input type="radio" id="cod" value="Cash on Delivery" v-model="method" />
+          <label for="cod">Cash on Delivery</label>
+        </li>
+      </ul>
+
+      <div v-if="method === 'Card'" class="form-group">
+        <input type="text" v-model="cardNumber" placeholder="Card Number (16 digits)" maxlength="16" />
+        <input type="text" v-model="expiry" placeholder="MM/YY" maxlength="5" />
+        <input type="password" v-model="cvv" placeholder="CVV" maxlength="3" />
       </div>
+
+      <div v-if="method === 'UPI'" class="form-group">
+        <input type="text" v-model="upiId" placeholder="Enter UPI ID (e.g., yourname@bank)" />
+      </div>
+
+      <p v-if="method === 'Cash on Delivery'" class="note">
+        Pay with cash once your order arrives. Available for orders below ₹2000 only.
+      </p>
+
+      <button class="pay-btn" @click="pay">Pay Now</button>
     </div>
   </div>
 </template>
@@ -26,237 +53,239 @@ import NavBar from './NavBar.vue';
 
 export default {
   components: { NavBar },
+  data() {
+    return {
+      username: '',
+      age: '',
+      phone: '',
+      email: '',
+      address: '',
+      method: '',
+      cardNumber: '',
+      expiry: '',
+      cvv: '',
+      upiId: ''
+    };
+  },
   computed: {
-    cart() {
-      return this.$store.getters.getCart;
-    },
-    totalAmount() {
-      return this.cart.reduce((total, item) => total + item.price, 0);
+    total() {
+      return this.$store.getters.getCartTotal;
     }
   },
   mounted() {
     this.initThree();
-    window.addEventListener('resize', this.handleResize);
-  },
-  beforeUnmount() {
-    window.removeEventListener('resize', this.handleResize);
-    if (this.animationId) {
-      cancelAnimationFrame(this.animationId);
-    }
-    if (this.renderer) {
-      this.renderer.dispose();
-    }
   },
   methods: {
+    pay() {
+      if (!this.username.trim()) return alert('Please enter your full name.');
+      if (!this.age || this.age < 1 || this.age > 120) return alert('Enter a valid age.');
+      if (!/^\d{10}$/.test(this.phone)) return alert('Enter a valid 10-digit phone number.');
+      if (!/^[\w.-]+@[\w.-]+\.\w{2,}$/.test(this.email)) return alert('Enter a valid email address.');
+      if (!this.address.trim()) return alert('Please enter your address.');
+      if (!this.method) return alert('Please select a payment method.');
+
+      if (this.method === 'Card') {
+        if (!/^\d{16}$/.test(this.cardNumber)) return alert('Enter a valid 16-digit card number.');
+        if (!/^\d{2}\/\d{2}$/.test(this.expiry)) return alert('Enter expiry in MM/YY format.');
+        if (!/^\d{3}$/.test(this.cvv)) return alert('Enter a valid 3-digit CVV.');
+      }
+
+      if (this.method === 'UPI' && !/^[\w.-]+@[\w.-]+$/.test(this.upiId)) {
+        return alert('Enter a valid UPI ID.');
+      }
+
+      if (this.method === 'Cash on Delivery' && this.total > 2000) {
+        return alert('Cash on Delivery is available only for orders below ₹2000.');
+      }
+
+      this.$store.commit('clearCart');
+      this.$router.push('/payment-success');
+    },
     initThree() {
       const canvas = this.$refs.bgCanvas;
-      
-      // Set canvas size to match window
-      canvas.style.width = '100%';
-      canvas.style.height = '100%';
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x000000);
+      const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
+      camera.position.z = 300;
 
-      this.scene = new THREE.Scene();
-      this.scene.background = new THREE.Color(0x000000);
-
-      this.camera = new THREE.PerspectiveCamera(
-        75,
-        window.innerWidth / window.innerHeight,
-        0.1,
-        1000
-      );
-      this.camera.position.z = 300;
-
-      this.renderer = new THREE.WebGLRenderer({ 
-        canvas,
-        antialias: true,
-        alpha: false
-      });
-      this.renderer.setPixelRatio(window.devicePixelRatio);
-      this.renderer.setSize(window.innerWidth, window.innerHeight);
+      const renderer = new THREE.WebGLRenderer({ canvas, alpha: false });
+      renderer.setSize(window.innerWidth, window.innerHeight);
 
       const geometry = new THREE.BufferGeometry();
-      const particleCount = 600;
       const positions = [];
-
-      for (let i = 0; i < particleCount; i++) {
+      for (let i = 0; i < 600; i++) {
         positions.push(
           THREE.MathUtils.randFloatSpread(600),
           THREE.MathUtils.randFloatSpread(600),
           THREE.MathUtils.randFloatSpread(600)
         );
       }
-
       geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
 
-      const material = new THREE.PointsMaterial({
-        size: 2,
-        color: '#ffffff',
-        transparent: true,
-        opacity: 0.9
+      const material = new THREE.PointsMaterial({ size: 2, color: '#fff', transparent: true, opacity: 0.9 });
+      const points = new THREE.Points(geometry, material);
+      scene.add(points);
+
+      const animate = () => {
+        requestAnimationFrame(animate);
+        points.rotation.y += 0.001;
+        points.rotation.x += 0.0005;
+        renderer.render(scene, camera);
+      };
+      animate();
+
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
       });
-
-      this.points = new THREE.Points(geometry, material);
-      this.scene.add(this.points);
-
-      this.animate();
-    },
-    animate() {
-      this.animationId = requestAnimationFrame(this.animate);
-      this.points.rotation.y += 0.001;
-      this.points.rotation.x += 0.0005;
-      this.renderer.render(this.scene, this.camera);
-    },
-    handleResize() {
-      this.camera.aspect = window.innerWidth / window.innerHeight;
-      this.camera.updateProjectionMatrix();
-      this.renderer.setSize(window.innerWidth, window.innerHeight);
-    },
-    goToPayment() {
-      this.$router.push('/payment');
-    },
-    removeFromCart(productId) {
-      this.$store.commit('REMOVE_FROM_CART', productId);
     }
   }
 };
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
-
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
-.cart-wrapper {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: #101010;
+.payment-wrapper {
+  height: 100vh;
+  overflow-y: auto;
+  position: relative;
   font-family: 'Poppins', sans-serif;
+  background: #000;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 3rem 1.5rem;
-  color: #fff;
-  overflow-y: auto;
+  padding: 2rem 1rem;
+  box-sizing: border-box;
 }
 
 .bg-canvas {
-  position: fixed;
-  top: 0;
-  left: 0;
+  position: absolute;
   width: 100%;
   height: 100%;
   z-index: 0;
-  pointer-events: none;
+  top: 0;
+  left: 0;
 }
 
-.cart-content {
+.payment-card {
   position: relative;
   z-index: 1;
-  max-width: 800px;
-  width: 100%;
-  padding: 2rem;
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(15px);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 2.5rem 2rem;
   border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  text-align: center;
-  margin: 2rem 0;
-}
-
-.cart-content h2 {
-  font-size: 2.2rem;
-  margin-bottom: 1.5rem;
-  font-weight: 700;
-  color: #f1f1f1;
-}
-
-.cart-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: rgba(255, 255, 255, 0.1);
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 1.5rem;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.cart-item:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
-}
-
-.cart-item img {
-  width: 80px;
-  height: 80px;
-  object-fit: cover;
-  border-radius: 8px;
-}
-
-.cart-item p {
-  flex: 1;
-  color: #ddd;
-  font-size: 1.1rem;
-  margin: 0 1rem;
-}
-
-.remove-button {
-  padding: 0.6rem 1rem;
-  background-color: #ff4d4d;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.2s ease;
-}
-
-.remove-button:hover {
-  background-color: #e60000;
-  transform: scale(1.05);
-}
-
-.total-amount {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #fff;
-  margin-top: 2rem;
-}
-
-.cart-button {
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.05);
   width: 100%;
-  padding: 1rem;
-  background-color: rgba(255, 255, 255, 0.1);
-  border: none;
+  max-width: 500px;
+  text-align: center;
   color: #fff;
+}
+
+.payment-card h2 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+.payment-options {
+  list-style: none;
+  padding: 0;
+  text-align: left;
+  margin-bottom: 1rem;
+}
+
+.payment-options li {
+  margin-bottom: 1rem;
+}
+
+.payment-options label {
+  margin-left: 0.5rem;
+  font-weight: 500;
+}
+
+.form-group {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.form-group input,
+.form-group textarea {
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  border: none;
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  outline: none;
+  resize: none;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: #ccc;
+}
+
+.note {
+  font-size: 0.85rem;
+  color: #ccc;
+  margin-top: 1rem;
+}
+
+.pay-btn {
+  margin-top: 2rem;
+  width: 100%;
+  padding: 0.8rem;
+  background-color: #ffffff;
+  border: none;
+  color: #000;
   font-weight: bold;
-  font-size: 1.1rem;
+  font-size: 1rem;
   border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.2s ease;
+  transition: background 0.3s ease;
 }
 
-.cart-button:hover {
-  background-color: #141616;
-  transform: scale(1.05);
+.pay-btn:hover {
+  background-color: #e0e0e0;
 }
 
-.cart-wrapper .empty-cart-message {
-  font-size: 1.2rem;
-  color: #bbb;
-  text-align: center;
-  margin-top: 2rem;
+@media (max-width: 768px) {
+  .payment-card {
+    padding: 2rem 1.5rem;
+  }
+
+  .payment-card h2 {
+    font-size: 1.5rem;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    font-size: 0.95rem;
+    padding: 0.5rem 0.7rem;
+  }
+
+  .pay-btn {
+    font-size: 0.95rem;
+    padding: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .payment-card h2 {
+    font-size: 1.3rem;
+  }
+
+  .pay-btn {
+    font-size: 0.9rem;
+    padding: 0.7rem;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    font-size: 0.9rem;
+  }
 }
 </style>

@@ -8,7 +8,7 @@
 
     <div class="main-card">
       <div class="main-content">
-        <h1>Welcome to Riya Clothing</h1>
+        <h1>Welcome to DEMI Clothing</h1>
         <p>Explore our collection of mordern cloths with a touch of laxury</p>
         <button @click="$router.push('/products')">Go to Products</button>
       </div>

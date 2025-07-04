@@ -7,11 +7,12 @@
       <h2>Choose Payment Method</h2>
       <div class="form-group">
         <input type="text" v-model="username" placeholder="Full Name" />
-        <input type="number" v-model="age" placeholder="Age" min="1" />
+        <input type="text" v-model="age" placeholder="Age" min="1"  />
         <input type="text" v-model="phone" placeholder="Phone Number (10 digits)" maxlength="10" />
         <input type="email" v-model="email" placeholder="Email Address" />
         <textarea v-model="address" placeholder="Delivery Address" rows="3"></textarea>
       </div>
+
       <ul class="payment-options">
         <li>
           <input type="radio" id="card" value="Card" v-model="method" />
@@ -26,6 +27,7 @@
           <label for="cod">Cash on Delivery</label>
         </li>
       </ul>
+
       <div v-if="method === 'Card'" class="form-group">
         <input type="text" v-model="cardNumber" placeholder="Card Number (16 digits)" maxlength="16" />
         <input type="text" v-model="expiry" placeholder="MM/YY" maxlength="5" />
@@ -58,8 +60,6 @@ export default {
       phone: '',
       email: '',
       address: '',
-
-      // Payment
       method: '',
       cardNumber: '',
       expiry: '',
@@ -77,68 +77,35 @@ export default {
   },
   methods: {
     pay() {
-      if (!this.username.trim()) {
-        alert('Please enter your full name.');
-        return;
-      }
-      if (!this.age || this.age < 1 || this.age > 120) {
-        alert('Enter a valid age.');
-        return;
-      }
-      if (!/^\d{10}$/.test(this.phone)) {
-        alert('Enter a valid 10-digit phone number.');
-        return;
-      }
-      if (!/^[\w.-]+@[\w.-]+\.\w{2,}$/.test(this.email)) {
-        alert('Enter a valid email address.');
-        return;
-      }
-      if (!this.address.trim()) {
-        alert('Please enter your address.');
-        return;
-      }
-
-      if (!this.method) {
-        alert('Please select a payment method.');
-        return;
-      }
+      if (!this.username.trim()) return alert('Please enter your full name.');
+      if (!this.age || this.age < 1 || this.age > 120) return alert('Enter a valid age.');
+      if (!/^\d{10}$/.test(this.phone)) return alert('Enter a valid 10-digit phone number.');
+      if (!/^[\w.-]+@[\w.-]+\.\w{2,}$/.test(this.email)) return alert('Enter a valid email address.');
+      if (!this.address.trim()) return alert('Please enter your address.');
+      if (!this.method) return alert('Please select a payment method.');
 
       if (this.method === 'Card') {
-        if (!/^\d{16}$/.test(this.cardNumber)) {
-          alert('Enter a valid 16-digit card number.');
-          return;
-        }
-        if (!/^\d{2}\/\d{2}$/.test(this.expiry)) {
-          alert('Enter expiry in MM/YY format.');
-          return;
-        }
-        if (!/^\d{3}$/.test(this.cvv)) {
-          alert('Enter a valid 3-digit CVV.');
-          return;
-        }
+        if (!/^\d{16}$/.test(this.cardNumber)) return alert('Enter a valid 16-digit card number.');
+        if (!/^\d{2}\/\d{2}$/.test(this.expiry)) return alert('Enter expiry in MM/YY format.');
+        if (!/^\d{3}$/.test(this.cvv)) return alert('Enter a valid 3-digit CVV.');
       }
 
       if (this.method === 'UPI' && !/^[\w.-]+@[\w.-]+$/.test(this.upiId)) {
-        alert('Enter a valid UPI ID.');
-        return;
+        return alert('Enter a valid UPI ID.');
       }
 
       if (this.method === 'Cash on Delivery' && this.total > 2000) {
-        alert('Cash on Delivery is available only for orders below ₹2000.');
-        return;
+        return alert('Cash on Delivery is available only for orders below ₹2000.');
       }
 
-  
       alert(`Payment successful via ${this.method}.\nName: ${this.username}\nPhone: ${this.phone}`);
       this.$store.commit('clearCart');
       this.$router.push('/main');
     },
-
     initThree() {
       const canvas = this.$refs.bgCanvas;
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0x000000);
-
       const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
       camera.position.z = 300;
 
@@ -146,26 +113,17 @@ export default {
       renderer.setSize(window.innerWidth, window.innerHeight);
 
       const geometry = new THREE.BufferGeometry();
-      const particleCount = 600;
       const positions = [];
-
-      for (let i = 0; i < particleCount; i++) {
+      for (let i = 0; i < 600; i++) {
         positions.push(
           THREE.MathUtils.randFloatSpread(600),
           THREE.MathUtils.randFloatSpread(600),
           THREE.MathUtils.randFloatSpread(600)
         );
       }
-
       geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
 
-      const material = new THREE.PointsMaterial({
-        size: 2,
-        color: '#ffffff',
-        transparent: true,
-        opacity: 0.9
-      });
-
+      const material = new THREE.PointsMaterial({ size: 2, color: '#fff', transparent: true, opacity: 0.9 });
       const points = new THREE.Points(geometry, material);
       scene.add(points);
 
@@ -175,7 +133,6 @@ export default {
         points.rotation.x += 0.0005;
         renderer.render(scene, camera);
       };
-
       animate();
 
       window.addEventListener('resize', () => {
@@ -193,13 +150,15 @@ export default {
 
 .payment-wrapper {
   height: 100vh;
-  overflow: hidden;
+  overflow-y: auto;
   position: relative;
   font-family: 'Poppins', sans-serif;
   background: #000;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 2rem 1rem;
+  box-sizing: border-box;
 }
 
 .bg-canvas {
@@ -294,5 +253,43 @@ export default {
 
 .pay-btn:hover {
   background-color: #e0e0e0;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .payment-card {
+    padding: 2rem 1.5rem;
+  }
+
+  .payment-card h2 {
+    font-size: 1.5rem;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    font-size: 0.95rem;
+    padding: 0.5rem 0.7rem;
+  }
+
+  .pay-btn {
+    font-size: 0.95rem;
+    padding: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .payment-card h2 {
+    font-size: 1.3rem;
+  }
+
+  .pay-btn {
+    font-size: 0.9rem;
+    padding: 0.7rem;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    font-size: 0.9rem;
+  }
 }
 </style>
